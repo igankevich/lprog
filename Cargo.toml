@@ -8,7 +8,7 @@ repository = "https://github.com/igankevich/lprog"
 documentation = "https://docs.rs/lprog"
 readme = "README.md"
 description = "Minimalistic linear programming optimization library"
-keywords = ["Simplex", "Big M", "tableau", "least positive residual"]
+keywords = ["Simplex", "BigM", "tableau"]
 categories = ["mathematics", "algorithms", "no-std"]
 include = ["**/*.rs", "Cargo.toml", "README.md"]
 
