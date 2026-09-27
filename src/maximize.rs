@@ -79,17 +79,13 @@ pub fn maximize(
     let column_count = objective_lhs.len();
     assert_eq!(0, constraints_lhs.len() % column_count);
     assert_eq!(constraints_rhs.len(), constraints_lhs.len() / column_count);
-    loop {
-        let Some((pivot_column_index, _)) = objective_lhs
-            .iter()
-            .copied()
-            .enumerate()
-            .filter(|(_i, value)| *value < 0.0)
-            .min_by(|(_i, a), (_j, b)| a.total_cmp(b))
-        else {
-            // No negative coefficients left.
-            break;
-        };
+    while let Some((pivot_column_index, _)) = objective_lhs
+        .iter()
+        .copied()
+        .enumerate()
+        .filter(|(_i, value)| *value < 0.0)
+        .min_by(|(_i, a), (_j, b)| a.total_cmp(b))
+    {
         let pivot_row_index = constraints_lhs
             .chunks_exact(column_count)
             .zip(constraints_rhs.iter().copied())
