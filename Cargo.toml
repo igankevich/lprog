@@ -1,0 +1,23 @@
+[package]
+name = "lprog"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+homepage = "https://github.com/igankevich/lprog"
+repository = "https://github.com/igankevich/lprog"
+documentation = "https://docs.rs/lprog"
+readme = "README.md"
+description = "Minimalistic linear programming optimization library"
+keywords = ["Simplex", "Big M", "tableau", "least positive residual"]
+categories = ["mathematics", "algorithms", "no-std"]
+include = ["**/*.rs", "Cargo.toml", "README.md"]
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--generate-link-to-definition", "--cfg", "docsrs"]
+
+[features]
+default = ["alloc"]
+alloc = []
+
+[lints.clippy]
+unwrap_used = "deny"
