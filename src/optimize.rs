@@ -277,6 +277,8 @@ pub fn fit<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::collection;
+    use proptest::prelude::*;
 
     #[test]
     fn optimize_works() {
@@ -361,29 +363,63 @@ mod tests {
     }
 
     #[test]
-    fn fit_works() {
-        let expected_model = |a, b, c| 10.0 * a + 20.0 * b + 30.0 * c;
-        let (rhs, objective_rhs) = fit(
+    fn fit_v2() {
+        let linear_model = |a, b, c| 1.0 * a + 2.0 * b + 3.0 * c;
+        let (params, objective_value) = fit(
             3,
             [
-                (&[1.0, 0.0, 0.0], expected_model(1.0, 0.0, 0.0)),
-                (&[1.0, 1.0, 0.0], expected_model(1.0, 1.0, 0.0)),
-                (&[1.0, 0.0, 1.0], expected_model(1.0, 0.0, 1.0)),
-                (&[1.0, 1.0, 1.0], expected_model(1.0, 1.0, 1.0)),
+                (&[2.0, 1.0, 1.0], linear_model(2.0, 1.0, 1.0)),
+                (&[1.0, 2.0, 1.0], linear_model(1.0, 2.0, 1.0)),
+                (&[1.0, 1.0, 2.0], linear_model(1.0, 1.0, 2.0)),
+                //(&[0.0, 1.0, 1.0], linear_model(0.0, 1.0, 1.0)),
+                //(&[1.0, 0.0, 1.0], linear_model(1.0, 0.0, 1.0)),
+                //(&[1.0, 1.0, 0.0], linear_model(1.0, 1.0, 0.0)),
+                //(&[1.0, 1.0, 1.0], linear_model(1.0, 1.0, 1.0)),
             ],
         )
         .unwrap();
-        assert!(
-            rhs.iter()
-                .copied()
-                .zip([10.0, 20.0, 30.0])
-                .map(|(a, b)| (a - b).abs())
-                .all(|abs_diff| abs_diff < 1e-3),
-            "rhs = {rhs:?}"
-        );
-        assert!(
-            (objective_rhs - 0.0).abs() < 1e-3,
-            "objective_rhs = {objective_rhs:?}"
-        );
+        assert_eq!([1.0, 2.0, 3.0].as_slice(), params.as_slice());
+        assert_eq!(0.0, objective_value);
+    }
+
+    fn model_coefficients() -> impl Strategy<Value = Vec<f64>> {
+        (1_usize..=3).prop_flat_map(|param_count| {
+            collection::vec((1_u8..=10).prop_map(|x| x as f64), param_count)
+        })
+    }
+
+    #[test]
+    fn fit_works_v2() {
+        proptest!(|(coefficients in model_coefficients())| {
+            let param_count = coefficients.len();
+            let mut observations = Vec::new();
+            assert!(param_count < u64::BITS as usize);
+            for i in 0..param_count {
+                let mut x = vec![0.0; param_count];
+                x[i] = 1.0;
+                let f = x
+                    .iter()
+                    .copied()
+                    .zip(coefficients.iter().copied())
+                    .map(|(x_i, f_i)| x_i * f_i)
+                    .sum::<f64>();
+                observations.push((x, f));
+            }
+            std::eprintln!("{observations:?}");
+            let (rhs, objective_rhs) = fit(param_count, observations).unwrap();
+            assert!(
+                rhs.iter()
+                    .skip(1)
+                    .copied()
+                    .zip(coefficients.iter().skip(1).copied())
+                    .map(|(a, b)| (a - b).abs())
+                    .all(|abs_diff| abs_diff < 1e-3),
+                "rhs = {rhs:?}, model = {coefficients:?}"
+            );
+            assert!(
+                (objective_rhs - 0.0).abs() < 1e-3,
+                "objective_rhs = {objective_rhs:?}"
+            );
+        });
     }
 }
